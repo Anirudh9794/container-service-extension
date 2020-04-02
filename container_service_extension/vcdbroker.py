@@ -86,7 +86,7 @@ class VcdBroker(AbstractBroker):
             self._sys_admin_client.logout()
         self._sys_admin_client = None
 
-    def get_cluster_info(self, data):
+    def get_cluster_info(self, data, telemetry=False):
         """Get cluster metadata as well as node data.
 
         Common broker function that validates data for the 'cluster info'
@@ -110,11 +110,12 @@ class VcdBroker(AbstractBroker):
                               org_name=validated_data[RequestKey.ORG_NAME],
                               ovdc_name=validated_data[RequestKey.OVDC_NAME])
 
-        # Record the telemetry data
-        cse_params = copy.deepcopy(validated_data)
-        cse_params[PayloadKey.CLUSTER_ID] = cluster[PayloadKey.CLUSTER_ID]
-        record_user_action_details(cse_operation=CseOperation.CLUSTER_INFO,
-                                   cse_params=cse_params)
+        if telemetry:
+            # Record the telemetry data
+            cse_params = copy.deepcopy(validated_data)
+            cse_params[PayloadKey.CLUSTER_ID] = cluster[PayloadKey.CLUSTER_ID]
+            record_user_action_details(cse_operation=CseOperation.CLUSTER_INFO,
+                                       cse_params=cse_params)
 
         cluster[K8S_PROVIDER_KEY] = K8sProvider.NATIVE
         vapp = VApp(self.tenant_client, href=cluster['vapp_href'])
@@ -138,7 +139,7 @@ class VcdBroker(AbstractBroker):
 
         return cluster
 
-    def list_clusters(self, data):
+    def list_clusters(self, data, telemetry=False):
         """List all native clusters and their relevant metadata.
 
         Common broker function that validates data for the 'list clusters'
@@ -152,9 +153,10 @@ class VcdBroker(AbstractBroker):
         }
         validated_data = {**defaults, **data}
 
-        # Record the data for telemetry
-        record_user_action_details(cse_operation=CseOperation.CLUSTER_LIST,
-                                   cse_params=copy.deepcopy(validated_data))
+        if telemetry:
+            # Record the data for telemetry
+            record_user_action_details(cse_operation=CseOperation.CLUSTER_LIST,
+                                       cse_params=copy.deepcopy(validated_data)) # noqa: E501
 
         # "raw clusters" do not have well-defined cluster data keys
         raw_clusters = get_all_clusters(
@@ -179,7 +181,7 @@ class VcdBroker(AbstractBroker):
             })
         return clusters
 
-    def get_cluster_config(self, data):
+    def get_cluster_config(self, data, telemetry=False):
         """Get the cluster's kube config contents.
 
         Common broker function that validates data for 'cluster config'
@@ -208,11 +210,12 @@ class VcdBroker(AbstractBroker):
 
         all_results = []
 
-        # Record the telemetry data
-        cse_params = copy.deepcopy(validated_data)
-        cse_params[PayloadKey.CLUSTER_ID] = cluster[PayloadKey.CLUSTER_ID]
-        record_user_action_details(cse_operation=CseOperation.CLUSTER_CONFIG,
-                                   cse_params=cse_params)
+        if telemetry:
+            # Record the telemetry data
+            cse_params = copy.deepcopy(validated_data)
+            cse_params[PayloadKey.CLUSTER_ID] = cluster[PayloadKey.CLUSTER_ID]
+            record_user_action_details(cse_operation=CseOperation.CLUSTER_CONFIG, # noqa: E501
+                                       cse_params=cse_params)
 
         try:
             for node_name in node_names:
@@ -235,7 +238,7 @@ class VcdBroker(AbstractBroker):
             raise ClusterOperationError("Couldn't get cluster configuration")
         return all_results[0].content.decode()
 
-    def get_cluster_upgrade_plan(self, data):
+    def get_cluster_upgrade_plan(self, data, telemetry=False):
         """Get the template names/revisions that the cluster can upgrade to.
 
         Required data: cluster_name
@@ -260,10 +263,11 @@ class VcdBroker(AbstractBroker):
                               org_name=validated_data[RequestKey.ORG_NAME],
                               ovdc_name=validated_data[RequestKey.OVDC_NAME])
 
-        # Record the telemetry data
-        cse_params = copy.deepcopy(validated_data)
-        cse_params[PayloadKey.CLUSTER_ID] = cluster[PayloadKey.CLUSTER_ID]
-        record_user_action_details(cse_operation=CseOperation.CLUSTER_UPGRADE_PLAN, cse_params=cse_params)  # noqa: E501
+        if telemetry:
+            # Record the telemetry data
+            cse_params = copy.deepcopy(validated_data)
+            cse_params[PayloadKey.CLUSTER_ID] = cluster[PayloadKey.CLUSTER_ID]
+            record_user_action_details(cse_operation=CseOperation.CLUSTER_UPGRADE_PLAN, cse_params=cse_params)  # noqa: E501
 
         src_name = cluster['template_name']
         src_rev = cluster['template_revision']
@@ -279,7 +283,7 @@ class VcdBroker(AbstractBroker):
         return upgrades
 
     @secure(required_rights=[CSE_NATIVE_DEPLOY_RIGHT_NAME])
-    def create_cluster(self, data):
+    def create_cluster(self, data, telemetry=False):
         """Start the cluster creation operation.
 
         Common broker function that validates data for the 'create cluster'
@@ -365,18 +369,19 @@ class VcdBroker(AbstractBroker):
             enable_nfs=validated_data[RequestKey.ENABLE_NFS],
             rollback=validated_data[RequestKey.ROLLBACK])
 
-        # Record the data for telemetry
-        cse_params = copy.deepcopy(validated_data)
-        cse_params[PayloadKey.CLUSTER_ID] = cluster_id
-        cse_params[LocalTemplateKey.MEMORY] = template.get(LocalTemplateKey.MEMORY)  # noqa: E501
-        cse_params[LocalTemplateKey.CPU] = template.get(LocalTemplateKey.CPU)
-        cse_params[LocalTemplateKey.KUBERNETES] = template.get(LocalTemplateKey.KUBERNETES)  # noqa: E501
-        cse_params[LocalTemplateKey.KUBERNETES_VERSION] = template.get(LocalTemplateKey.KUBERNETES_VERSION)  # noqa: E501
-        cse_params[LocalTemplateKey.OS] = template.get(LocalTemplateKey.OS)
-        cse_params[LocalTemplateKey.CNI] = template.get(LocalTemplateKey.CNI)
-        cse_params[LocalTemplateKey.CNI_VERSION] = template.get(LocalTemplateKey.CNI_VERSION)  # noqa: E501
-        record_user_action_details(cse_operation=CseOperation.CLUSTER_CREATE,
-                                   cse_params=cse_params)
+        if telemetry:
+            # Record the data for telemetry
+            cse_params = copy.deepcopy(validated_data)
+            cse_params[PayloadKey.CLUSTER_ID] = cluster_id
+            cse_params[LocalTemplateKey.MEMORY] = template.get(LocalTemplateKey.MEMORY)  # noqa: E501
+            cse_params[LocalTemplateKey.CPU] = template.get(LocalTemplateKey.CPU) # noqa: E501
+            cse_params[LocalTemplateKey.KUBERNETES] = template.get(LocalTemplateKey.KUBERNETES)  # noqa: E501
+            cse_params[LocalTemplateKey.KUBERNETES_VERSION] = template.get(LocalTemplateKey.KUBERNETES_VERSION)  # noqa: E501
+            cse_params[LocalTemplateKey.OS] = template.get(LocalTemplateKey.OS) # noqa: E501
+            cse_params[LocalTemplateKey.CNI] = template.get(LocalTemplateKey.CNI) # noqa: E501
+            cse_params[LocalTemplateKey.CNI_VERSION] = template.get(LocalTemplateKey.CNI_VERSION)  # noqa: E501
+            record_user_action_details(cse_operation=CseOperation.CLUSTER_CREATE, # noqa: E501
+                                       cse_params=cse_params)
 
         return {
             'name': cluster_name,
@@ -385,7 +390,7 @@ class VcdBroker(AbstractBroker):
         }
 
     @secure(required_rights=[CSE_NATIVE_DEPLOY_RIGHT_NAME])
-    def resize_cluster(self, data):
+    def resize_cluster(self, data, telemetry=False):
         """Start the resize cluster operation.
 
         Common broker function that validates data for the 'resize cluster'
@@ -427,17 +432,18 @@ class VcdBroker(AbstractBroker):
             raise CseServerError(f"Cluster '{cluster_name}' already has "
                                  f"{num_workers} worker nodes.")
 
-        # Record the telemetry data
-        cse_params = copy.deepcopy(validated_data)
-        cse_params[PayloadKey.CLUSTER_ID] = cluster_info[PayloadKey.CLUSTER_ID]
-        record_user_action_details(cse_operation=CseOperation.CLUSTER_RESIZE,
-                                   cse_params=cse_params)
+        if telemetry:
+            # Record the telemetry data
+            cse_params = copy.deepcopy(validated_data)
+            cse_params[PayloadKey.CLUSTER_ID] = cluster_info[PayloadKey.CLUSTER_ID] # noqa: E501
+            record_user_action_details(cse_operation=CseOperation.CLUSTER_RESIZE, # noqa: E501
+                                       cse_params=cse_params)
 
         validated_data[RequestKey.NUM_WORKERS] = num_workers_wanted - num_workers # noqa: E501
         return self.create_nodes(validated_data)
 
     @secure(required_rights=[CSE_NATIVE_DEPLOY_RIGHT_NAME])
-    def delete_cluster(self, data):
+    def delete_cluster(self, data, telemetry=False):
         """Start the delete cluster operation.
 
         Common broker function that validates data for 'delete cluster'
@@ -464,11 +470,12 @@ class VcdBroker(AbstractBroker):
                               ovdc_name=validated_data[RequestKey.OVDC_NAME])
         cluster_id = cluster['cluster_id']
 
-        # Record the telemetry data
-        cse_params = copy.deepcopy(validated_data)
-        cse_params[PayloadKey.CLUSTER_ID] = cluster_id
-        record_user_action_details(cse_operation=CseOperation.CLUSTER_DELETE,
-                                   cse_params=cse_params)
+        if telemetry:
+            # Record the telemetry data
+            cse_params = copy.deepcopy(validated_data)
+            cse_params[PayloadKey.CLUSTER_ID] = cluster_id
+            record_user_action_details(cse_operation=CseOperation.CLUSTER_DELETE, # noqa: E501
+                                       cse_params=cse_params)
 
         # must _update_task here or else self.task_resource is None
         # do not logout of sys admin, or else in pyvcloud's session.request()
@@ -485,7 +492,7 @@ class VcdBroker(AbstractBroker):
         }
 
     @secure(required_rights=[CSE_NATIVE_DEPLOY_RIGHT_NAME])
-    def upgrade_cluster(self, data):
+    def upgrade_cluster(self, data, telemetry=False):
         """Start the upgrade cluster operation.
 
         Validates data for 'upgrade cluster' operation.
@@ -529,11 +536,12 @@ class VcdBroker(AbstractBroker):
         # get cluster data (including node names) to pass to async function
         cluster = self.get_cluster_info(validated_data)
 
-        # Record the telemetry data
-        cse_params = copy.deepcopy(validated_data)
-        cse_params[PayloadKey.CLUSTER_ID] = cluster[PayloadKey.CLUSTER_ID]
-        record_user_action_details(cse_operation=CseOperation.CLUSTER_UPGRADE,
-                                   cse_params=cse_params)
+        if telemetry:
+            # Record the telemetry data
+            cse_params = copy.deepcopy(validated_data)
+            cse_params[PayloadKey.CLUSTER_ID] = cluster[PayloadKey.CLUSTER_ID]
+            record_user_action_details(cse_operation=CseOperation.CLUSTER_UPGRADE, # noqa: E501
+                                       cse_params=cse_params)
 
         msg = f"Upgrading cluster '{cluster_name}' " \
               f"software to match template {template_name} (revision " \
@@ -553,7 +561,7 @@ class VcdBroker(AbstractBroker):
             'task_href': self.task_resource.get('href')
         }
 
-    def get_node_info(self, data):
+    def get_node_info(self, data, telemetry=False):
         """Get node metadata as dictionary.
 
         Required data: cluster_name, node_name
@@ -577,10 +585,11 @@ class VcdBroker(AbstractBroker):
                               org_name=validated_data[RequestKey.ORG_NAME],
                               ovdc_name=validated_data[RequestKey.OVDC_NAME])
 
-        # Record the telemetry data
-        cse_params = copy.deepcopy(validated_data)
-        cse_params[PayloadKey.CLUSTER_ID] = cluster[PayloadKey.CLUSTER_ID]
-        record_user_action_details(cse_operation=CseOperation.NODE_INFO, cse_params=cse_params)  # noqa: E501
+        if telemetry:
+            # Record the telemetry data
+            cse_params = copy.deepcopy(validated_data)
+            cse_params[PayloadKey.CLUSTER_ID] = cluster[PayloadKey.CLUSTER_ID]
+            record_user_action_details(cse_operation=CseOperation.NODE_INFO, cse_params=cse_params)  # noqa: E501
 
         vapp = VApp(self.tenant_client, href=cluster['vapp_href'])
         vms = vapp.get_all_vms()
@@ -617,7 +626,7 @@ class VcdBroker(AbstractBroker):
         return node_info
 
     @secure(required_rights=[CSE_NATIVE_DEPLOY_RIGHT_NAME])
-    def create_nodes(self, data):
+    def create_nodes(self, data, telemetry=False):
         """Start the create nodes operation.
 
         Validates data for 'node create' operation. Creating nodes is an
@@ -668,18 +677,19 @@ class VcdBroker(AbstractBroker):
                               ovdc_name=validated_data[RequestKey.OVDC_NAME])
         cluster_id = cluster['cluster_id']
 
-        # Record the data for telemetry
-        cse_params = copy.deepcopy(validated_data)
-        cse_params[PayloadKey.CLUSTER_ID] = cluster_id
-        cse_params[LocalTemplateKey.MEMORY] = template.get(LocalTemplateKey.MEMORY)  # noqa: E501
-        cse_params[LocalTemplateKey.CPU] = template.get(LocalTemplateKey.CPU)
-        cse_params[LocalTemplateKey.KUBERNETES] = template.get(LocalTemplateKey.KUBERNETES)  # noqa: E501
-        cse_params[LocalTemplateKey.KUBERNETES_VERSION] = template.get(LocalTemplateKey.KUBERNETES_VERSION)  # noqa: E501
-        cse_params[LocalTemplateKey.OS] = template.get(LocalTemplateKey.OS)
-        cse_params[LocalTemplateKey.CNI] = template.get(LocalTemplateKey.CNI)
-        cse_params[LocalTemplateKey.CNI_VERSION] = template.get(LocalTemplateKey.CNI_VERSION)  # noqa: E501
-        record_user_action_details(cse_operation=CseOperation.NODE_CREATE,
-                                   cse_params=cse_params)
+        if telemetry:
+            # Record the data for telemetry
+            cse_params = copy.deepcopy(validated_data)
+            cse_params[PayloadKey.CLUSTER_ID] = cluster_id
+            cse_params[LocalTemplateKey.MEMORY] = template.get(LocalTemplateKey.MEMORY)  # noqa: E501
+            cse_params[LocalTemplateKey.CPU] = template.get(LocalTemplateKey.CPU) # noqa: E501
+            cse_params[LocalTemplateKey.KUBERNETES] = template.get(LocalTemplateKey.KUBERNETES)  # noqa: E501
+            cse_params[LocalTemplateKey.KUBERNETES_VERSION] = template.get(LocalTemplateKey.KUBERNETES_VERSION)  # noqa: E501
+            cse_params[LocalTemplateKey.OS] = template.get(LocalTemplateKey.OS)
+            cse_params[LocalTemplateKey.CNI] = template.get(LocalTemplateKey.CNI) # noqa: E501
+            cse_params[LocalTemplateKey.CNI_VERSION] = template.get(LocalTemplateKey.CNI_VERSION)  # noqa: E501
+            record_user_action_details(cse_operation=CseOperation.NODE_CREATE,
+                                       cse_params=cse_params) # noqa: E501
 
         # must _update_task here or else self.task_resource is None
         # do not logout of sys admin, or else in pyvcloud's session.request()
@@ -711,7 +721,7 @@ class VcdBroker(AbstractBroker):
         }
 
     @secure(required_rights=[CSE_NATIVE_DEPLOY_RIGHT_NAME])
-    def delete_nodes(self, data):
+    def delete_nodes(self, data, telemetry=False):
         """Start the delete nodes operation.
 
         Validates data for the 'delete nodes' operation. Deleting nodes is an
@@ -749,12 +759,13 @@ class VcdBroker(AbstractBroker):
                               ovdc_name=validated_data[RequestKey.OVDC_NAME])
         cluster_id = cluster['cluster_id']
 
-        # Record the telemetry data; record separate data for each node
-        cse_params = copy.deepcopy(validated_data)
-        cse_params[PayloadKey.CLUSTER_ID] = cluster[PayloadKey.CLUSTER_ID]
-        for node in node_names_list:
-            cse_params[PayloadKey.NODE_NAME] = node
-            record_user_action_details(cse_operation=CseOperation.NODE_DELETE, cse_params=cse_params)  # noqa: E501
+        if telemetry:
+            # Record the telemetry data; record separate data for each node
+            cse_params = copy.deepcopy(validated_data)
+            cse_params[PayloadKey.CLUSTER_ID] = cluster[PayloadKey.CLUSTER_ID]
+            for node in node_names_list:
+                cse_params[PayloadKey.NODE_NAME] = node
+                record_user_action_details(cse_operation=CseOperation.NODE_DELETE, cse_params=cse_params)  # noqa: E501
 
         # must _update_task here or else self.task_resource is None
         # do not logout of sys admin, or else in pyvcloud's session.request()

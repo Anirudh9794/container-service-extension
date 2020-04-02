@@ -205,7 +205,7 @@ class PksBroker(AbstractBroker):
             pks_plans_list.append(plan.to_dict())
         return pks_plans_list
 
-    def list_clusters(self, data):
+    def list_clusters(self, data, telemetry=False):
         """Get list of clusters in PKS environment.
 
         System administrator gets all the clusters for the given service
@@ -266,7 +266,7 @@ class PksBroker(AbstractBroker):
         return list_of_cluster_dicts
 
     @secure(required_rights=[CSE_PKS_DEPLOY_RIGHT_NAME])
-    def create_cluster(self, data):
+    def create_cluster(self, data, telemetry=False):
         """Create cluster in PKS environment.
 
         To retain the user context, user-id of the logged-in user is appended
@@ -363,7 +363,7 @@ class PksBroker(AbstractBroker):
 
         return cluster_dict
 
-    def get_cluster_info(self, data):
+    def get_cluster_info(self, data, telemetry=False):
         """Get the details of a cluster with a given name in PKS environment.
 
         System administrator gets the given cluster information regardless of
@@ -431,7 +431,7 @@ class PksBroker(AbstractBroker):
 
         return cluster_dict
 
-    def get_cluster_config(self, data):
+    def get_cluster_config(self, data, telemetry=False):
         """Get the configuration of the cluster with the given name in PKS.
 
         System administrator gets the given cluster config regardless of
@@ -466,7 +466,7 @@ class PksBroker(AbstractBroker):
         return self.filter_traces_of_user_context(cluster_config)
 
     @secure(required_rights=[CSE_PKS_DEPLOY_RIGHT_NAME])
-    def delete_cluster(self, data):
+    def delete_cluster(self, data, telemetry=False):
         """Delete the cluster with a given name in PKS environment.
 
         System administrator can delete the given cluster regardless of
@@ -517,7 +517,7 @@ class PksBroker(AbstractBroker):
         return result
 
     @secure(required_rights=[CSE_PKS_DEPLOY_RIGHT_NAME])
-    def resize_cluster(self, data):
+    def resize_cluster(self, data, telemetry=False):
         """Resize the cluster of a given name to given number of worker nodes.
 
         System administrator can resize the given cluster regardless of

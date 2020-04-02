@@ -12,7 +12,8 @@ from container_service_extension.server_constants import K8sProvider
 import container_service_extension.utils as utils
 
 
-def list_clusters(request_data, tenant_auth_token, is_jwt_token):
+def list_clusters(request_data, tenant_auth_token, is_jwt_token,
+                  telemetry=False):
     request_data['is_admin_request'] = True
     pks_clusters = []
     pks_ctx_list = create_pks_context_for_all_accounts_in_org(
@@ -20,7 +21,7 @@ def list_clusters(request_data, tenant_auth_token, is_jwt_token):
     for pks_ctx in pks_ctx_list:
         pks_broker = PksBroker(pks_ctx, tenant_auth_token, is_jwt_token)
         # Get all cluster information to get vdc name from compute-profile-name
-        for cluster in pks_broker.list_clusters(request_data):
+        for cluster in pks_broker.list_clusters(request_data, telemetry=telemetry): # noqa: E501
             pks_cluster = \
                 pks_broker.generate_cluster_subset_with_given_keys(cluster)
             pks_clusters.append(pks_cluster)
