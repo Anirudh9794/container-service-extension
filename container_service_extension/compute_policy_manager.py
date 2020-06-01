@@ -19,6 +19,7 @@ import container_service_extension.utils as utils
 
 
 _SYSTEM_DEFAULT_COMPUTE_POLICY = 'System Default'
+_GLOBAL_PVDC_COMPUTE_POLICY = 'cse_pvdc_compute_policy'
 
 
 class ComputePolicyManager:
@@ -196,6 +197,67 @@ class ComputePolicyManager:
             updated_policy['href'] = policy_info['href']
             return updated_policy
 
+    def create_pvdc_compute_policy(self, name):
+        """Create a PVDC compute policy.
+
+        :param str name: name to be assigned to the comptue policy
+
+        :return a dectionary which represents the pvdc compute policy created
+        """
+        # TODO check if api version is > 35
+        self._raise_error_if_not_supported()
+        payload = {'name': name, 'description': ''}
+        pvdc_compute_policy = self._cloudapi_client.do_request(
+            method=RequestMethod.POST,
+            cloudapi_version=cloudApiConstants.CLOUDAPI_VERSION_1_0_0,
+            resource_url_relative_path= \
+                f"{cloudApiConstants.CloudApiResource.PVDC_COMPUTE_POLICIES}",
+            payload=payload
+        )
+        return pvdc_compute_policy
+
+    def create_vdc_policy_from_pvdc_policy(self, name, pvdc_compute_policy_id):
+        """Convert pvdc compute policy from vdc compute policy.
+
+        :param str name: name of the vdc compute policy to be created
+        :param str pvdc_compute_policy_id: pvdc compute policy id used to create
+            the compute policy
+        
+        :return a dictionary which represents the vdc compute policy created
+        """
+        # TODO check if api version is >= 33
+        self._raise_error_if_not_supported()
+        if not pvdc_compute_policy_id:
+            raise Exception
+        payload = {
+            'name': name,
+            'pvdcComputePolicy': {
+                'id': pvdc_compute_policy_id
+            }
+        }
+        vdc_compute_policy = self._cloudapi_client.do_request(
+            method=RequestMethod.POST,
+            cloudapi_version=cloudApiConstants.CLOUDAPI_VERSION_1_0_0,
+            resource_url_relative_path= \
+                f"{cloudApiConstants.CloudApiResource.VDC_COMPUTE_POLICIES}",
+            payload=payload
+        )
+        return vdc_compute_policy
+    
+    def create_global_placement_policy(self, name):
+        """Creates a vdcComputePolicy which is a placement policy.
+
+        :param str name: name of the global placment policy to create
+        
+        :return dictionary which represents the placement policy
+        """
+        # TODO check if the api version >= 33
+        self._raise_error_if_not_supported()
+        pvdc_compute_policy = self.create_pvdc_compute_policy(_GLOBAL_PVDC_COMPUTE_POLICY) # noqa: E501
+        CLUSTER_KINDS = ['native', 'tkg_plus']
+        for t in CLUSTER_KINDS:
+            self.create_vdc_policy_from_pvdc_policy(t, pvdc_compute_policy.get('id'))
+
     def add_compute_policy_to_vdc(self, vdc_id, compute_policy_href):
         """Add compute policy to the given vdc.
 
@@ -211,6 +273,9 @@ class ComputePolicyManager:
         vdc = vcd_utils.get_vdc(self._sysadmin_client, vdc_id=vdc_id,
                                 is_admin_operation=True)
         return vdc.add_compute_policy(compute_policy_href)
+    
+    # def remove_compute_policy_from_vdc(self, vdc_id, compute_policy_href):
+        
 
     def list_compute_policies_on_vdc(self, vdc_id):
         """List compute policy currently assigned to a given vdc.
