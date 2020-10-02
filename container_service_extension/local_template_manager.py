@@ -6,7 +6,6 @@ import ast
 import os
 import pathlib
 
-from pyvcloud.vcd.client import ApiVersion as vCDApiVersion
 from pyvcloud.vcd.client import MetadataDomain
 from pyvcloud.vcd.client import MetadataVisibility
 from pyvcloud.vcd.org import Org
@@ -15,7 +14,6 @@ from pyvcloud.vcd.utils import metadata_to_dict
 import container_service_extension.logger as logger
 from container_service_extension.pyvcloud_utils import get_org
 from container_service_extension.server_constants import LocalTemplateKey
-import container_service_extension.shared_constants as shared_constants
 
 LOCAL_SCRIPTS_DIR = '.cse_scripts'
 
@@ -94,6 +92,7 @@ def get_all_k8s_local_template_definition(client, catalog_name, org=None,
 =======
             continue
 
+<<<<<<< HEAD
         api_version = float(client.get_api_version())
         if api_version >= float(vCDApiVersion.VERSION_35.value) and \
                 metadata_dict[LocalTemplateKey.KIND] == \
@@ -108,6 +107,8 @@ def get_all_k8s_local_template_definition(client, catalog_name, org=None,
 >>>>>>> Server side changes to handle when TKG+ is swithced off
             continue
 
+=======
+>>>>>>> Partially addressed review comments
         # non-string metadata is written to the dictionary as a string
         # when 'upgrade_from' metadata is empty, vcd returns it as: "['']"
         # when 'upgrade_from' metadata is not empty, vcd returns it as an array
