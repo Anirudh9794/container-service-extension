@@ -121,6 +121,32 @@ class ServerState(Enum):
     STOPPED = 'Stopped'
 
 
+# NOTE: CSE 3.0 behavior when `enable_tkg_plus` is set to true in the config:
+# cse install/upgrade will:
+# 1. create appropriate TKG+ policy
+# 2. Tag new/old templates with the corresponding policy
+# 3. publish TKG+ policy to OVDC
+# cse template install will:
+# 1. tag the newly created template with TKG+ policy
+# 2. If the policy is not found error will be raised
+# cse run will
+# 1. read all templates from catalog including the ones that have 'kind' set
+#   to TKG+
+# ovdc handler will:
+# 1. allow enabling/disabling ovdcs for TKG+
+#
+# If `enable_tkg_plus` flag is set to false in the config:
+# cse install/upgrade will:
+# 1. not create TKG+ policy
+# 2. raise error if a TKG+ template is specified in the templates.yaml
+# 3. raise error if a TKG+ cluster is encountered
+# cse template install will
+# 1. raise error if TKG+ template is given as an input
+# cse run will
+# 1. Skip reading all TKG+ templates
+# OVDC handler will
+# 1. reject all TKG+ related OVDC updates
+# 2. Skip showing TKG+ in the output for list and get
 class Service(object, metaclass=Singleton):
     def __init__(self, config_file, pks_config_file=None,
                  should_check_config=True,
@@ -538,6 +564,7 @@ class Service(object, metaclass=Singleton):
                           f"'{template[server_constants.LocalTemplateKey.NAME]}' as " \
                           "TKG+ is not enabled"  # noqa: E501
                     logger.SERVER_LOGGER.debug(msg)
+                    k8_templates.remove(template)
                     continue
                 if str(template[server_constants.LocalTemplateKey.REVISION]) == default_template_revision and \
                         template[server_constants.LocalTemplateKey.NAME] == default_template_name: # noqa: E501
