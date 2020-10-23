@@ -24,7 +24,7 @@ import container_service_extension.pyvcloud_utils as vcd_utils
 DUPLICATE_CLUSTER_ERROR_MSG = "Duplicate clusters found. Please use --k8-runtime for the unique identification"  # noqa: E501
 
 
-class DefEntityClusterApi:
+class DECluster:
     """Handle operations common to DefNative and TKG kubernetes clusters.
 
     Also any operation where cluster kind is not supplied should be handled here.  # noqa: E501
@@ -45,8 +45,8 @@ class DefEntityClusterApi:
             vcd_utils.get_cloudapi_client_from_vcd_client(
                 client=client, logger_debug=logger.CLIENT_LOGGER,
                 logger_wire=logger_wire)
-        self._nativeCluster = NativeClusterApi(client)
-        self._tkgCluster = tkg_cli_api.TKGClusterApi(client)
+        self._nativeCluster = DENativeCluster(client)
+        self._tkgCluster = DEClusterTKG(client)
 
     def list_clusters(self, vdc=None, org=None, **kwargs):
         """Get collection of clusters using DEF API.
